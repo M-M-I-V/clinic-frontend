@@ -27,14 +27,14 @@ export function Header() {
         <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="relative w-10 h-10 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center">
             <Image
-              src="/college-clinic-medical-logo.jpg"
+              src="/clinic.png"
               alt="College Clinic Logo"
               width={40}
               height={40}
               className="object-cover"
             />
           </div>
-          <span className="font-semibold text-lg hidden sm:inline-block">Patient Records</span>
+          <span className="font-semibold text-lg hidden sm:inline-block">MCST Health Services Office</span>
         </Link>
 
         {/* Navigation Menu */}

@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
         <ThemeProvider defaultTheme="light" storageKey="prms-theme">
           <Suspense fallback={<div>Loading...</div>}>
             <AuthProvider>{children}</AuthProvider>

@@ -117,8 +117,8 @@ export default function LoginForm() {
         <div className="flex justify-center mb-2">
           <div className="relative w-24 h-24 rounded-full overflow-hidden bg-white shadow-md">
             <Image
-              src="/college-clinic-medical-logo.jpg"
-              alt="College Clinic Logo"
+              src="/clinic.png"
+              alt="MCST Health Services Office Logo"
               width={96}
               height={96}
               className="object-cover"
