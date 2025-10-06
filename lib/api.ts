@@ -23,24 +23,24 @@ export interface PatientList {
   id: number
   name: string
   studentId?: string
-  gender: string
+  sex: string
   program: string
   knownDiseases: string
 }
 
 export interface Patient {
   id: number
-  name: string
   studentId?: string
-  gender: string
+  fullName: string
+  birthDate?: string
+  sex: string
+  age?: number
   program: string
-  knownDiseases: string
-  dateOfBirth?: string
   contactNumber?: string
-  email?: string
-  address?: string
-  emergencyContact?: string
+  emergencyContactName?: string
   emergencyContactNumber?: string
+  emergencyContactRelationship?: string
+  knownDiseases?: string
 }
 
 // SWR fetcher function
@@ -86,27 +86,34 @@ export function usePatient(id: number | null) {
 }
 
 export async function createPatient(patientData: Omit<Patient, "id">) {
+  console.log("[v0] Creating patient with data:", patientData)
+
   const response = await fetchWithAuth(`${API_BASE_URL}/api/add-patient`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(patientData),
   })
 
+  console.log("[v0] Response status:", response.status)
+
   if (!response.ok) {
-    throw new Error("Failed to create patient")
+    const errorText = await response.text()
+    console.error("[v0] Error response:", errorText)
+    throw new Error(`Failed to create patient: ${response.status} - ${errorText}`)
   }
 
-  return response.json()
+  const contentType = response.headers.get("content-type")
+  if (contentType && contentType.includes("application/json")) {
+    return response.json()
+  } else {
+    // Return text or empty object if no JSON content
+    const text = await response.text()
+    return text || { success: true }
+  }
 }
 
 export async function updatePatient(id: number, patientData: Partial<Patient>) {
   const response = await fetchWithAuth(`${API_BASE_URL}/api/update-patient/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(patientData),
   })
 
@@ -114,7 +121,13 @@ export async function updatePatient(id: number, patientData: Partial<Patient>) {
     throw new Error("Failed to update patient")
   }
 
-  return response.json()
+  const contentType = response.headers.get("content-type")
+  if (contentType && contentType.includes("application/json")) {
+    return response.json()
+  } else {
+    const text = await response.text()
+    return text || { success: true }
+  }
 }
 
 export async function deletePatient(id: number) {
@@ -126,5 +139,46 @@ export async function deletePatient(id: number) {
     throw new Error("Failed to delete patient")
   }
 
-  return response.json()
+  const contentType = response.headers.get("content-type")
+  if (contentType && contentType.includes("application/json")) {
+    return response.json()
+  } else {
+    const text = await response.text()
+    return text || { success: true }
+  }
+}
+
+export async function importPatients(file: File) {
+  const formData = new FormData()
+  formData.append("file", file)
+
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/patients/import`, {
+    method: "POST",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to import patients")
+  }
+
+  return response.text()
+}
+
+export async function exportPatients() {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/patients/export`)
+
+  if (!response.ok) {
+    throw new Error("Failed to export patients")
+  }
+
+  const blob = await response.blob()
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "patients.csv"
+  document.body.appendChild(a)
+  a.click()
+  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
 }

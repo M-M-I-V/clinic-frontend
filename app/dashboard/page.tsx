@@ -62,14 +62,14 @@ export default function DashboardPage() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back, {user.username}!</h1>
-          <p className="text-muted-foreground">Here's an overview of your patient record management system.</p>
+          <p className="text-muted-foreground">Here&apos;s an overview of your patient record management system.</p>
         </div>
 
         {/* KPI Cards */}
         <div className="grid gap-6 md:grid-cols-2 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Today's Visits</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Today&apos;s Visits</CardTitle>
               <Calendar className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>

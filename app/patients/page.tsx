@@ -1,17 +1,32 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import type React from "react"
+
+import { useEffect, useState, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { useAuth } from "@/lib/auth-context"
-import { usePatientsList } from "@/lib/api"
+import { usePatientsList, deletePatient, importPatients, exportPatients } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { UserPlus, Search } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { UserPlus, Search, Pencil, Trash2, Upload, Download } from "lucide-react"
+import { mutate } from "swr"
+
+const PROGRAMS = ["BSIS", "ABComm", "BSMath", "BPA", "BPEd", "BSN"]
 
 export default function PatientsPage() {
   const router = useRouter()
@@ -21,7 +36,15 @@ export default function PatientsPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
   const [programFilter, setProgramFilter] = useState<string>("all")
-  const [genderFilter, setGenderFilter] = useState<string>("all")
+  const [sexFilter, setSexFilter] = useState<string>("all")
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [patientToDelete, setPatientToDelete] = useState<{ id: number; name: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const [isImporting, setIsImporting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -43,19 +66,72 @@ export default function PatientsPage() {
       // Program filter
       const matchesProgram = programFilter === "all" || patient.program === programFilter
 
-      // Gender filter
-      const matchesGender = genderFilter === "all" || patient.gender === genderFilter
+      const matchesSex = sexFilter === "all" || patient.sex === sexFilter
 
-      return matchesSearch && matchesProgram && matchesGender
+      return matchesSearch && matchesProgram && matchesSex
     })
-  }, [patients, searchQuery, programFilter, genderFilter])
+  }, [patients, searchQuery, programFilter, sexFilter])
 
-  // Extract unique programs for filter dropdown
-  const programs = useMemo(() => {
-    if (!patients) return []
-    const uniquePrograms = Array.from(new Set(patients.map((p) => p.program)))
-    return uniquePrograms.sort()
-  }, [patients])
+  const handleDeleteClick = (id: number, name: string) => {
+    setPatientToDelete({ id, name })
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!patientToDelete) return
+
+    setIsDeleting(true)
+    try {
+      await deletePatient(patientToDelete.id)
+      // Refresh the patients list
+      mutate(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/patients-list`)
+      setDeleteDialogOpen(false)
+      setPatientToDelete(null)
+    } catch (error) {
+      console.error("Failed to delete patient:", error)
+      alert("Failed to delete patient. Please try again.")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+    try {
+      await importPatients(file)
+      // Refresh the patients list
+      mutate(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/patients-list`)
+      alert("Patients imported successfully!")
+    } catch (error) {
+      console.error("Failed to import patients:", error)
+      alert(`Failed to import patients: ${error instanceof Error ? error.message : "Unknown error"}`)
+    } finally {
+      setIsImporting(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
+
+  const handleExportClick = async () => {
+    setIsExporting(true)
+    try {
+      await exportPatients()
+    } catch (error) {
+      console.error("Failed to export patients:", error)
+      alert("Failed to export patients. Please try again.")
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -98,18 +174,39 @@ export default function PatientsPage() {
             <h1 className="text-3xl font-bold text-foreground">Patients</h1>
             <p className="text-muted-foreground mt-1">Manage and view patient records</p>
           </div>
-          <Button className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Add Patient
-          </Button>
+          <div className="flex gap-2">
+            <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} className="hidden" />
+            <Button
+              variant="outline"
+              className="gap-2 bg-transparent"
+              onClick={handleImportClick}
+              disabled={isImporting}
+            >
+              <Upload className="h-4 w-4" />
+              {isImporting ? "Importing..." : "Import"}
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 bg-transparent"
+              onClick={handleExportClick}
+              disabled={isExporting}
+            >
+              <Download className="h-4 w-4" />
+              {isExporting ? "Exporting..." : "Export"}
+            </Button>
+            <Button className="gap-2" onClick={() => router.push("/patients/add")}>
+              <UserPlus className="h-4 w-4" />
+              Add Patient
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-3">
               {/* Search */}
-              <div className="relative md:col-span-2">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name or student ID..."
@@ -126,7 +223,7 @@ export default function PatientsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Programs</SelectItem>
-                  {programs.map((program) => (
+                  {PROGRAMS.map((program) => (
                     <SelectItem key={program} value={program}>
                       {program}
                     </SelectItem>
@@ -134,16 +231,14 @@ export default function PatientsPage() {
                 </SelectContent>
               </Select>
 
-              {/* Gender Filter */}
-              <Select value={genderFilter} onValueChange={setGenderFilter}>
+              <Select value={sexFilter} onValueChange={setSexFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Genders" />
+                  <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Genders</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="Male">Male</SelectItem>
                   <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -178,9 +273,10 @@ export default function PatientsPage() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Student ID</TableHead>
-                      <TableHead>Gender</TableHead>
+                      <TableHead>Sex</TableHead>
                       <TableHead>Program</TableHead>
                       <TableHead>Known Diseases</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -192,9 +288,31 @@ export default function PatientsPage() {
                           </Link>
                         </TableCell>
                         <TableCell className="text-muted-foreground">{patient.studentId || "—"}</TableCell>
-                        <TableCell>{patient.gender}</TableCell>
+                        <TableCell>{patient.sex}</TableCell>
                         <TableCell>{patient.program}</TableCell>
                         <TableCell className="text-muted-foreground">{patient.knownDiseases || "None"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => router.push(`/patients/${patient.id}/edit`)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Edit patient</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteClick(patient.id, patient.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete patient</span>
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -203,6 +321,28 @@ export default function PatientsPage() {
             )}
           </CardContent>
         </Card>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the patient record for <strong>{patientToDelete?.name}</strong>. This
+                action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   )
