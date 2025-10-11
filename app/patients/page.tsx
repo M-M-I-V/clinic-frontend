@@ -25,8 +25,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { UserPlus, Search, Pencil, Trash2, Upload, Download } from "lucide-react"
 import { mutate } from "swr"
+import { Label } from "@/components/ui/label"
 
-const PROGRAMS = ["BSIS", "ABComm", "BSMath", "BPA", "BPEd", "BSN"]
+const STATUS = ["Active", "Inactive", "Other"]
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
 
 export default function PatientsPage() {
   const router = useRouter()
@@ -35,8 +37,9 @@ export default function PatientsPage() {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
-  const [programFilter, setProgramFilter] = useState<string>("all")
-  const [sexFilter, setSexFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [genderFilter, setGenderFilter] = useState<string>("all")
+  const [lastNameLetter, setLastNameLetter] = useState<string>("all")
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [patientToDelete, setPatientToDelete] = useState<{ id: number; name: string } | null>(null)
@@ -57,23 +60,25 @@ export default function PatientsPage() {
     if (!patients) return []
 
     return patients.filter((patient) => {
-      // Search filter (name or student ID)
+      const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase()
       const matchesSearch =
         searchQuery === "" ||
-        patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.studentId?.toLowerCase().includes(searchQuery.toLowerCase())
+        fullName.includes(searchQuery.toLowerCase()) ||
+        patient.studentNumber?.toLowerCase().includes(searchQuery.toLowerCase())
 
-      // Program filter
-      const matchesProgram = programFilter === "all" || patient.program === programFilter
+      const matchesStatus = statusFilter === "all" || patient.status === statusFilter
 
-      const matchesSex = sexFilter === "all" || patient.sex === sexFilter
+      const matchesGender = genderFilter === "all" || patient.gender === genderFilter
 
-      return matchesSearch && matchesProgram && matchesSex
+      const matchesLastNameLetter =
+        lastNameLetter === "all" || patient.lastName.toUpperCase().startsWith(lastNameLetter)
+
+      return matchesSearch && matchesStatus && matchesGender && matchesLastNameLetter
     })
-  }, [patients, searchQuery, programFilter, sexFilter])
+  }, [patients, searchQuery, statusFilter, genderFilter, lastNameLetter])
 
-  const handleDeleteClick = (id: number, name: string) => {
-    setPatientToDelete({ id, name })
+  const handleDeleteClick = (id: number, firstName: string, lastName: string) => {
+    setPatientToDelete({ id, name: `${firstName} ${lastName}` })
     setDeleteDialogOpen(true)
   }
 
@@ -83,7 +88,6 @@ export default function PatientsPage() {
     setIsDeleting(true)
     try {
       await deletePatient(patientToDelete.id)
-      // Refresh the patients list
       mutate(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/patients-list`)
       setDeleteDialogOpen(false)
       setPatientToDelete(null)
@@ -106,7 +110,6 @@ export default function PatientsPage() {
     setIsImporting(true)
     try {
       await importPatients(file)
-      // Refresh the patients list
       mutate(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/patients-list`)
       alert("Patients imported successfully!")
     } catch (error) {
@@ -114,7 +117,6 @@ export default function PatientsPage() {
       alert(`Failed to import patients: ${error instanceof Error ? error.message : "Unknown error"}`)
     } finally {
       setIsImporting(false)
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
@@ -145,7 +147,6 @@ export default function PatientsPage() {
     return null
   }
 
-  // Check if user has required role (MD, DMD, or NURSE)
   const hasAccess = ["MD", "DMD", "NURSE"].includes(user.role)
 
   if (!hasAccess) {
@@ -204,43 +205,71 @@ export default function PatientsPage() {
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or student ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name or student number..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    {STATUS.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Gender Filter */}
+                <Select value={genderFilter} onValueChange={setGenderFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Program Filter */}
-              <Select value={programFilter} onValueChange={setProgramFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Programs" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Programs</SelectItem>
-                  {PROGRAMS.map((program) => (
-                    <SelectItem key={program} value={program}>
-                      {program}
-                    </SelectItem>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Filter by Last Name</Label>
+                <div className="flex flex-wrap gap-1">
+                  <Button
+                    variant={lastNameLetter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setLastNameLetter("all")}
+                    className="h-8 w-12"
+                  >
+                    All
+                  </Button>
+                  {ALPHABET.map((letter) => (
+                    <Button
+                      key={letter}
+                      variant={lastNameLetter === letter ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setLastNameLetter(letter)}
+                      className="h-8 w-8 p-0"
+                    >
+                      {letter}
+                    </Button>
                   ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={sexFilter} onValueChange={setSexFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                </SelectContent>
-              </Select>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -272,10 +301,9 @@ export default function PatientsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>Student ID</TableHead>
-                      <TableHead>Sex</TableHead>
-                      <TableHead>Program</TableHead>
-                      <TableHead>Known Diseases</TableHead>
+                      <TableHead>Student Number</TableHead>
+                      <TableHead>Gender</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -284,13 +312,12 @@ export default function PatientsPage() {
                       <TableRow key={patient.id}>
                         <TableCell>
                           <Link href={`/patients/${patient.id}`} className="font-medium text-primary hover:underline">
-                            {patient.name}
+                            {patient.firstName} {patient.lastName}
                           </Link>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{patient.studentId || "—"}</TableCell>
-                        <TableCell>{patient.sex}</TableCell>
-                        <TableCell>{patient.program}</TableCell>
-                        <TableCell className="text-muted-foreground">{patient.knownDiseases || "None"}</TableCell>
+                        <TableCell className="text-muted-foreground">{patient.studentNumber || "—"}</TableCell>
+                        <TableCell>{patient.gender}</TableCell>
+                        <TableCell>{patient.status}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
@@ -306,7 +333,7 @@ export default function PatientsPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteClick(patient.id, patient.name)}
+                              onClick={() => handleDeleteClick(patient.id, patient.firstName, patient.lastName)}
                             >
                               <Trash2 className="h-4 w-4" />
                               <span className="sr-only">Delete patient</span>

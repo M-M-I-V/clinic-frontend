@@ -4,28 +4,27 @@ import { useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { useAuth } from "@/lib/auth-context"
-import { API_BASE_URL } from "@/lib/api"
+import { API_BASE_URL, type Patient } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Pencil, Calendar, Phone, User, GraduationCap, Heart, AlertCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import {
+  ArrowLeft,
+  Pencil,
+  Calendar,
+  Phone,
+  User,
+  GraduationCap,
+  Heart,
+  AlertCircle,
+  Ruler,
+  Weight,
+  FileText,
+  Activity,
+} from "lucide-react"
 import useSWR from "swr"
 import { fetchWithAuth } from "@/lib/auth"
-
-interface PatientDetail {
-  id: number
-  studentId?: string
-  fullName: string
-  birthDate?: string
-  sex: string
-  age?: number
-  program: string
-  contactNumber?: string
-  emergencyContactName?: string
-  emergencyContactNumber?: string
-  emergencyContactRelationship?: string
-  knownDiseases?: string
-}
 
 const fetcher = async (url: string) => {
   const response = await fetchWithAuth(url)
@@ -45,7 +44,7 @@ export default function PatientProfilePage() {
     data: patient,
     error,
     isLoading,
-  } = useSWR<PatientDetail>(patientId ? `${API_BASE_URL}/api/patients/${patientId}` : null, fetcher)
+  } = useSWR<Patient>(patientId ? `${API_BASE_URL}/api/patients/${patientId}` : null, fetcher)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -65,7 +64,6 @@ export default function PatientProfilePage() {
     return null
   }
 
-  // Check if user has required role (MD, DMD, or NURSE)
   const hasAccess = ["MD", "DMD", "NURSE"].includes(user.role)
 
   if (!hasAccess) {
@@ -128,9 +126,12 @@ export default function PatientProfilePage() {
           </Button>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">{patient.fullName}</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                {patient.firstName} {patient.middleInitial ? `${patient.middleInitial}. ` : ""}
+                {patient.lastName}
+              </h1>
               <p className="text-muted-foreground mt-1">
-                {patient.studentId ? `Student ID: ${patient.studentId}` : "Patient Profile"}
+                {patient.studentNumber ? `Student Number: ${patient.studentNumber}` : "Patient Profile"}
               </p>
             </div>
             <Button onClick={() => router.push(`/patients/${patient.id}/edit`)} className="gap-2">
@@ -151,23 +152,37 @@ export default function PatientProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                <p className="text-base">{patient.fullName}</p>
+                <p className="text-sm font-medium text-muted-foreground">First Name</p>
+                <p className="text-base">{patient.firstName}</p>
               </div>
               <Separator />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Student ID</p>
-                <p className="text-base">{patient.studentId || "—"}</p>
+                <p className="text-sm font-medium text-muted-foreground">Last Name</p>
+                <p className="text-base">{patient.lastName}</p>
+              </div>
+              {patient.middleInitial && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Middle Initial</p>
+                    <p className="text-base">{patient.middleInitial}</p>
+                  </div>
+                </>
+              )}
+              <Separator />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Student Number</p>
+                <p className="text-base">{patient.studentNumber || "—"}</p>
               </div>
               <Separator />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Sex</p>
-                  <p className="text-base">{patient.sex}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Gender</p>
+                  <p className="text-base">{patient.gender}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Age</p>
-                  <p className="text-base">{patient.age || "—"}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <Badge variant="secondary">{patient.status}</Badge>
                 </div>
               </div>
               <Separator />
@@ -178,22 +193,6 @@ export default function PatientProfilePage() {
                 </p>
                 <p className="text-base">{patient.birthDate || "—"}</p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Academic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Academic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Program</p>
-                <p className="text-base">{patient.program}</p>
-              </div>
               <Separator />
               <div>
                 <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -201,6 +200,101 @@ export default function PatientProfilePage() {
                   Contact Number
                 </p>
                 <p className="text-base">{patient.contactNumber || "—"}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Physical Measurements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Ruler className="h-4 w-4" />
+                    Height
+                  </p>
+                  <p className="text-base">{patient.heightCm ? `${patient.heightCm} cm` : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Weight className="h-4 w-4" />
+                    Weight
+                  </p>
+                  <p className="text-base">{patient.weightKg ? `${patient.weightKg} kg` : "—"}</p>
+                </div>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">BMI</p>
+                <p className="text-base">{patient.bmi || "—"}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Category & Medical Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Category</p>
+                <Badge variant="outline" className="mt-1">
+                  {patient.category}
+                </Badge>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Medical Done</p>
+                  <Badge variant={patient.medicalDone === "Yes" ? "default" : "secondary"} className="mt-1">
+                    {patient.medicalDone || "—"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Dental Done</p>
+                  <Badge variant={patient.dentalDone === "Yes" ? "default" : "secondary"} className="mt-1">
+                    {patient.dentalDone || "—"}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Forms Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Health Exam Form</p>
+                <Badge variant={patient.healthExamForm === "Yes" ? "default" : "secondary"} className="mt-1">
+                  {patient.healthExamForm || "—"}
+                </Badge>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Medical/Dental Info Sheet</p>
+                <Badge variant={patient.medicalDentalInfoSheet === "Yes" ? "default" : "secondary"} className="mt-1">
+                  {patient.medicalDentalInfoSheet || "—"}
+                </Badge>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Dental Chart</p>
+                <Badge variant={patient.dentalChart === "Yes" ? "default" : "secondary"} className="mt-1">
+                  {patient.dentalChart || "—"}
+                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -234,7 +328,6 @@ export default function PatientProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Medical Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -242,11 +335,25 @@ export default function PatientProfilePage() {
                 Medical Information
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Known Diseases</p>
-                <p className="text-base mt-2">{patient.knownDiseases || "None reported"}</p>
+                <p className="text-sm font-medium text-muted-foreground">Special Medical Condition</p>
+                <p className="text-base mt-2">{patient.specialMedicalCondition || "None reported"}</p>
               </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Communicable Disease</p>
+                <p className="text-base mt-2">{patient.communicableDisease || "None reported"}</p>
+              </div>
+              {patient.remarks && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Remarks</p>
+                    <p className="text-base mt-2">{patient.remarks}</p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

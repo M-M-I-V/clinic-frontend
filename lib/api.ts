@@ -21,26 +21,38 @@ export interface VisitTrend {
 
 export interface PatientList {
   id: number
-  name: string
-  studentId?: string
-  sex: string
-  program: string
-  knownDiseases: string
+  firstName: string
+  lastName: string
+  studentNumber?: string
+  gender: string
+  status: string
 }
 
 export interface Patient {
   id: number
-  studentId?: string
-  fullName: string
+  studentNumber?: string
+  lastName: string
+  firstName: string
+  middleInitial?: string
+  status?: string
+  gender: string
   birthDate?: string
-  sex: string
-  age?: number
-  program: string
+  heightCm?: number
+  weightKg?: number
+  bmi?: number
+  category?: string // Student, Staff, Faculty
+  medicalDone?: string // Yes or No
+  dentalDone?: string // Yes or No
   contactNumber?: string
+  healthExamForm?: string // Yes or No
+  medicalDentalInfoSheet?: string // Yes or No
+  dentalChart?: string // Yes or No
+  specialMedicalCondition?: string
+  communicableDisease?: string
   emergencyContactName?: string
-  emergencyContactNumber?: string
   emergencyContactRelationship?: string
-  knownDiseases?: string
+  emergencyContactNumber?: string
+  remarks?: string
 }
 
 // SWR fetcher function
