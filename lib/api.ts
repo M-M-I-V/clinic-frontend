@@ -19,6 +19,29 @@ export interface VisitTrend {
   count: number
 }
 
+export interface Visit {
+  id: number
+  visitDate: string
+  visitType: string // MEDICAL or DENTAL
+  chiefComplaint: string
+  temperature?: number
+  bloodPressure?: string
+  pulseRate?: number
+  respiratoryRate?: number
+  spo2?: number
+  history?: string
+  symptoms?: string
+  physicalExamFindings?: string
+  diagnosis?: string
+  plan?: string
+  treatment?: string
+  patient?: {
+    id: number
+    firstName: string
+    lastName: string
+  }
+}
+
 export interface PatientList {
   id: number
   firstName: string
@@ -80,6 +103,12 @@ export function useTopDiagnoses() {
 export function useVisitsTrend() {
   return useSWR<VisitTrend[]>(`${API_BASE_URL}/api/dashboard/visits-trend`, fetcher, {
     refreshInterval: 60000, // Refresh every minute
+  })
+}
+
+export function useVisits() {
+  return useSWR<Visit[]>(`${API_BASE_URL}/visits`, fetcher, {
+    refreshInterval: 30000, // Refresh every 30 seconds
   })
 }
 
