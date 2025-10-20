@@ -23,11 +23,6 @@ export const isAuthenticated = (): boolean => {
 export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   const token = getAuthToken()
 
-  console.log("[v0] Token exists:", !!token)
-  if (token) {
-    console.log("[v0] Token preview:", token.substring(0, 20) + "...")
-  }
-
   if (!token) {
     throw new Error("No authentication token found")
   }
@@ -42,11 +37,10 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     ;(headers as Record<string, string>)["Content-Type"] = "application/json"
   }
 
-  console.log("[v0] Making request to:", url)
-  console.log("[v0] Request method:", options.method || "GET")
-
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers,
   })
+
+  return response
 }

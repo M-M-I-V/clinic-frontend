@@ -6,7 +6,7 @@ import { Header } from "@/components/header"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, Upload, Plus } from "lucide-react"
+import { Download, Upload, Plus, AlertCircle } from "lucide-react"
 import { VisitsTable } from "@/components/visits-table"
 import { useVisits } from "@/lib/api"
 
@@ -61,6 +61,33 @@ export default function VisitsPage() {
     return visit.visitType.toLowerCase() === filter
   })
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                Error Loading Visits
+              </CardTitle>
+              <CardDescription>
+                Unable to load visits. Please check your connection and try again. If the problem persists, contact
+                support.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -90,11 +117,19 @@ export default function VisitsPage() {
                   <Download className="h-4 w-4" />
                   Export
                 </Button>
-                <Button size="sm" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button
+                  size="sm"
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={() => router.push("/visits/medical/add")}
+                >
                   <Plus className="h-4 w-4" />
                   Add Medical Visit
                 </Button>
-                <Button size="sm" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button
+                  size="sm"
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={() => router.push("/visits/dental/add")}
+                >
                   <Plus className="h-4 w-4" />
                   Add Dental Visit
                 </Button>
@@ -136,10 +171,6 @@ export default function VisitsPage() {
             {visitsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-              </div>
-            ) : error ? (
-              <div className="flex items-center justify-center py-12 text-sm text-destructive">
-                Failed to load visits
               </div>
             ) : !filteredVisits || filteredVisits.length === 0 ? (
               <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">

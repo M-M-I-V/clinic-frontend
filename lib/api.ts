@@ -21,8 +21,10 @@ export interface VisitTrend {
 
 export interface Visit {
   id: number
+  fullName: string
+  birthDate: string
   visitDate: string
-  visitType: string // MEDICAL or DENTAL
+  visitType: string
   chiefComplaint: string
   temperature?: number
   bloodPressure?: string
@@ -35,11 +37,12 @@ export interface Visit {
   diagnosis?: string
   plan?: string
   treatment?: string
-  patient?: {
-    id: number
-    firstName: string
-    lastName: string
-  }
+  // Medical visit specific fields
+  hama?: string
+  referralForm?: string
+  medicalChartImage?: string
+  // Dental visit specific fields
+  dentalChartImage?: string
 }
 
 export interface PatientList {
@@ -107,7 +110,7 @@ export function useVisitsTrend() {
 }
 
 export function useVisits() {
-  return useSWR<Visit[]>(`${API_BASE_URL}/visits`, fetcher, {
+  return useSWR<Visit[]>(`${API_BASE_URL}/api/visits-list`, fetcher, {
     refreshInterval: 30000, // Refresh every 30 seconds
   })
 }
@@ -222,4 +225,325 @@ export async function exportPatients() {
   a.click()
   window.URL.revokeObjectURL(url)
   document.body.removeChild(a)
+}
+
+export async function getVisit(id: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/${id}`)
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch visit")
+  }
+
+  return response.json()
+}
+
+export async function updateVisit(id: number, visitData: Partial<Visit>) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(visitData),
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to update visit")
+  }
+
+  const contentType = response.headers.get("content-type")
+  if (contentType && contentType.includes("application/json")) {
+    return response.json()
+  } else {
+    const text = await response.text()
+    return text || { success: true }
+  }
+}
+
+export async function deleteVisit(id: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/${id}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to delete visit")
+  }
+
+  const contentType = response.headers.get("content-type")
+  if (contentType && contentType.includes("application/json")) {
+    return response.json()
+  } else {
+    const text = await response.text()
+    return text || { success: true }
+  }
+}
+
+export async function createMedicalVisit(data: {
+  patientId: string
+  visitDate: string
+  chiefComplaint: string
+  temperature?: string
+  bloodPressure?: string
+  pulseRate?: string
+  respiratoryRate?: string
+  spo2?: string
+  history?: string
+  symptoms?: string
+  physicalExamFindings?: string
+  diagnosis?: string
+  plan?: string
+  treatment?: string
+  hama?: string
+  referralForm?: string
+  medicalChartImage?: File | null
+}) {
+  const formData = new FormData()
+  formData.append("patientId", data.patientId)
+  formData.append("visitDate", data.visitDate)
+  formData.append("visitType", "MEDICAL")
+  formData.append("chiefComplaint", data.chiefComplaint)
+  formData.append("temperature", data.temperature || "")
+  formData.append("bloodPressure", data.bloodPressure || "")
+  formData.append("pulseRate", data.pulseRate || "")
+  formData.append("respiratoryRate", data.respiratoryRate || "")
+  formData.append("spo2", data.spo2 || "")
+  formData.append("history", data.history || "")
+  formData.append("symptoms", data.symptoms || "")
+  formData.append("physicalExamFindings", data.physicalExamFindings || "")
+  formData.append("diagnosis", data.diagnosis || "")
+  formData.append("plan", data.plan || "")
+  formData.append("treatment", data.treatment || "")
+  formData.append("hama", data.hama || "")
+  formData.append("referralForm", data.referralForm || "")
+
+  if (data.medicalChartImage) {
+    formData.append("multipartFile", data.medicalChartImage)
+  }
+
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/add`, {
+    method: "POST",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to create medical visit")
+  }
+
+  return response.text()
+}
+
+export async function getMedicalVisit(id: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/${id}`)
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch medical visit")
+  }
+
+  return response.json()
+}
+
+export async function getDentalVisit(id: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/${id}`)
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch dental visit")
+  }
+
+  return response.json()
+}
+
+export async function deleteMedicalVisit(id: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/${id}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to delete medical visit")
+  }
+
+  const contentType = response.headers.get("content-type")
+  if (contentType && contentType.includes("application/json")) {
+    return response.json()
+  } else {
+    const text = await response.text()
+    return text || { success: true }
+  }
+}
+
+export async function deleteDentalVisit(id: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/${id}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to delete dental visit")
+  }
+
+  const contentType = response.headers.get("content-type")
+  if (contentType && contentType.includes("application/json")) {
+    return response.json()
+  } else {
+    const text = await response.text()
+    return text || { success: true }
+  }
+}
+
+export async function createDentalVisit(data: {
+  patientId: string
+  visitDate: string
+  chiefComplaint: string
+  temperature?: string
+  bloodPressure?: string
+  pulseRate?: string
+  respiratoryRate?: string
+  spo2?: string
+  history?: string
+  symptoms?: string
+  physicalExamFindings?: string
+  diagnosis?: string
+  plan?: string
+  treatment?: string
+  dentalChartImage?: File | null
+}) {
+  const formData = new FormData()
+  formData.append("patientId", data.patientId)
+  formData.append("visitDate", data.visitDate)
+  formData.append("visitType", "DENTAL")
+  formData.append("chiefComplaint", data.chiefComplaint)
+  formData.append("temperature", data.temperature || "")
+  formData.append("bloodPressure", data.bloodPressure || "")
+  formData.append("pulseRate", data.pulseRate || "")
+  formData.append("respiratoryRate", data.respiratoryRate || "")
+  formData.append("spo2", data.spo2 || "")
+  formData.append("history", data.history || "")
+  formData.append("symptoms", data.symptoms || "")
+  formData.append("physicalExamFindings", data.physicalExamFindings || "")
+  formData.append("diagnosis", data.diagnosis || "")
+  formData.append("plan", data.plan || "")
+  formData.append("treatment", data.treatment || "")
+
+  if (data.dentalChartImage) {
+    formData.append("multipartFile", data.dentalChartImage)
+  }
+
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/add`, {
+    method: "POST",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to create dental visit")
+  }
+
+  return response.text()
+}
+
+export async function updateMedicalVisit(
+  id: number,
+  data: {
+    patientId: string
+    visitDate: string
+    chiefComplaint: string
+    temperature?: string
+    bloodPressure?: string
+    pulseRate?: string
+    respiratoryRate?: string
+    spo2?: string
+    history?: string
+    symptoms?: string
+    physicalExamFindings?: string
+    diagnosis?: string
+    plan?: string
+    treatment?: string
+    hama?: string
+    referralForm?: string
+    medicalChartImage?: File | null
+  },
+) {
+  const formData = new FormData()
+  formData.append("patientId", data.patientId)
+  formData.append("visitDate", data.visitDate)
+  formData.append("visitType", "MEDICAL")
+  formData.append("chiefComplaint", data.chiefComplaint)
+  formData.append("temperature", data.temperature || "")
+  formData.append("bloodPressure", data.bloodPressure || "")
+  formData.append("pulseRate", data.pulseRate || "")
+  formData.append("respiratoryRate", data.respiratoryRate || "")
+  formData.append("spo2", data.spo2 || "")
+  formData.append("history", data.history || "")
+  formData.append("symptoms", data.symptoms || "")
+  formData.append("physicalExamFindings", data.physicalExamFindings || "")
+  formData.append("diagnosis", data.diagnosis || "")
+  formData.append("plan", data.plan || "")
+  formData.append("treatment", data.treatment || "")
+  formData.append("hama", data.hama || "")
+  formData.append("referralForm", data.referralForm || "")
+
+  if (data.medicalChartImage) {
+    formData.append("multipartFile", data.medicalChartImage)
+  }
+
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/update/${id}`, {
+    method: "PUT",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to update medical visit")
+  }
+
+  return response.text()
+}
+
+export async function updateDentalVisit(
+  id: number,
+  data: {
+    patientId: string
+    visitDate: string
+    chiefComplaint: string
+    temperature?: string
+    bloodPressure?: string
+    pulseRate?: string
+    respiratoryRate?: string
+    spo2?: string
+    history?: string
+    symptoms?: string
+    physicalExamFindings?: string
+    diagnosis?: string
+    plan?: string
+    treatment?: string
+    dentalChartImage?: File | null
+  },
+) {
+  const formData = new FormData()
+  formData.append("patientId", data.patientId)
+  formData.append("visitDate", data.visitDate)
+  formData.append("visitType", "DENTAL")
+  formData.append("chiefComplaint", data.chiefComplaint)
+  formData.append("temperature", data.temperature || "")
+  formData.append("bloodPressure", data.bloodPressure || "")
+  formData.append("pulseRate", data.pulseRate || "")
+  formData.append("respiratoryRate", data.respiratoryRate || "")
+  formData.append("spo2", data.spo2 || "")
+  formData.append("history", data.history || "")
+  formData.append("symptoms", data.symptoms || "")
+  formData.append("physicalExamFindings", data.physicalExamFindings || "")
+  formData.append("diagnosis", data.diagnosis || "")
+  formData.append("plan", data.plan || "")
+  formData.append("treatment", data.treatment || "")
+
+  if (data.dentalChartImage) {
+    formData.append("multipartFile", data.dentalChartImage)
+  }
+
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/update/${id}`, {
+    method: "PUT",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to update dental visit")
+  }
+
+  return response.text()
 }
