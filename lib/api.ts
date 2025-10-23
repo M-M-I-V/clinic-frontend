@@ -81,6 +81,19 @@ export interface Patient {
   remarks?: string
 }
 
+export interface UserList {
+  id: number
+  username: string
+  role: string
+}
+
+export interface User {
+  id: number
+  username: string
+  password?: string
+  role: string
+}
+
 // SWR fetcher function
 const fetcher = async (url: string) => {
   const response = await fetchWithAuth(url)
@@ -111,6 +124,12 @@ export function useVisitsTrend() {
 
 export function useVisits() {
   return useSWR<Visit[]>(`${API_BASE_URL}/api/visits-list`, fetcher, {
+    refreshInterval: 30000, // Refresh every 30 seconds
+  })
+}
+
+export function usePatientVisits(patientId: number | null) {
+  return useSWR<Visit[]>(patientId ? `${API_BASE_URL}/api/visits-list/patient/${patientId}` : null, fetcher, {
     refreshInterval: 30000, // Refresh every 30 seconds
   })
 }
@@ -350,7 +369,7 @@ export async function getDentalVisit(id: number) {
 }
 
 export async function deleteMedicalVisit(id: number) {
-  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/${id}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/delete/${id}`, {
     method: "DELETE",
   })
 
@@ -368,7 +387,7 @@ export async function deleteMedicalVisit(id: number) {
 }
 
 export async function deleteDentalVisit(id: number) {
-  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/${id}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/delete/${id}`, {
     method: "DELETE",
   })
 
@@ -479,6 +498,8 @@ export async function updateMedicalVisit(
 
   if (data.medicalChartImage) {
     formData.append("multipartFile", data.medicalChartImage)
+  } else {
+    formData.append("multipartFile", new File([], ""))
   }
 
   const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/update/${id}`, {
@@ -533,6 +554,8 @@ export async function updateDentalVisit(
 
   if (data.dentalChartImage) {
     formData.append("multipartFile", data.dentalChartImage)
+  } else {
+    formData.append("multipartFile", new File([], ""))
   }
 
   const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/update/${id}`, {
@@ -546,4 +569,101 @@ export async function updateDentalVisit(
   }
 
   return response.text()
+}
+
+export async function importVisits(file: File) {
+  const formData = new FormData()
+  formData.append("file", file)
+
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/import`, {
+    method: "POST",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to import visits")
+  }
+
+  return response.text()
+}
+
+export async function exportVisits() {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/export`)
+
+  if (!response.ok) {
+    throw new Error("Failed to export visits")
+  }
+
+  const blob = await response.blob()
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "visits.csv"
+  document.body.appendChild(a)
+  a.click()
+  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+}
+
+export function useUsersList() {
+  return useSWR<UserList[]>(`${API_BASE_URL}/api/admin/users/list`, fetcher, {
+    refreshInterval: 30000, // Refresh every 30 seconds
+  })
+}
+
+export async function getUser(id: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/users/${id}`)
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch user")
+  }
+
+  return response.json()
+}
+
+export async function createUser(userData: Omit<User, "id">) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/users/add`, {
+    method: "POST",
+    body: JSON.stringify(userData),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to create user")
+  }
+
+  return response.text()
+}
+
+export async function updateUser(id: number, userData: Partial<User>) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/users/update/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(userData),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || "Failed to update user")
+  }
+
+  return response.text()
+}
+
+export async function deleteUser(id: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/users/delete/${id}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to delete user")
+  }
+
+  const contentType = response.headers.get("content-type")
+  if (contentType && contentType.includes("application/json")) {
+    return response.json()
+  } else {
+    const text = await response.text()
+    return text || { success: true }
+  }
 }

@@ -35,6 +35,25 @@ export default function VisitProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const canEditDelete = () => {
+    if (!user) return false
+    if (visitType === "MEDICAL") {
+      return user.role === "MD"
+    } else if (visitType === "DENTAL") {
+      return user.role === "DMD"
+    }
+    return false
+  }
+
+  const getPermissionMessage = () => {
+    if (visitType === "MEDICAL") {
+      return "Only users with MD role can edit or delete medical visits."
+    } else if (visitType === "DENTAL") {
+      return "Only users with DMD role can edit or delete dental visits."
+    }
+    return "You do not have permission to edit or delete this visit."
+  }
+
   useEffect(() => {
     const fetchVisit = async () => {
       try {
@@ -181,15 +200,32 @@ export default function VisitProfilePage() {
               <h1 className="text-3xl font-bold text-foreground">{visit.fullName}</h1>
               <p className="text-muted-foreground mt-1">Visit on {formatDate(visit.visitDate)}</p>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={() => router.push(`/visits/${visit.id}/edit?type=${visitType}`)} className="gap-2">
-                <Pencil className="h-4 w-4" />
-                Edit Visit
-              </Button>
-              <Button onClick={() => setShowDeleteDialog(true)} variant="destructive" className="gap-2">
-                <Trash2 className="h-4 w-4" />
-                Delete Visit
-              </Button>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => router.push(`/visits/${visit.id}/edit?type=${visitType}`)}
+                  disabled={!canEditDelete()}
+                  className="gap-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit Visit
+                </Button>
+                <Button
+                  onClick={() => setShowDeleteDialog(true)}
+                  variant="destructive"
+                  disabled={!canEditDelete()}
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Visit
+                </Button>
+              </div>
+              {!canEditDelete() && (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-amber-800">{getPermissionMessage()}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

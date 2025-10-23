@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
@@ -9,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Download, Upload, Plus, AlertCircle } from "lucide-react"
 import { VisitsTable } from "@/components/visits-table"
 import { useVisits } from "@/lib/api"
+import { useRef } from "react"
 
 type VisitFilter = "all" | "medical" | "dental"
 
@@ -16,13 +19,55 @@ export default function VisitsPage() {
   const router = useRouter()
   const { user, isLoading } = useAuth()
   const [filter, setFilter] = useState<VisitFilter>("all")
-  const { data: visits, error, isLoading: visitsLoading } = useVisits()
+  const { data: visits, error, isLoading: visitsLoading, mutate } = useVisits()
+  const [isImporting, setIsImporting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/")
     }
   }, [user, isLoading, router])
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+    setImportMessage(null)
+
+    try {
+      const { importVisits } = await import("@/lib/api")
+      await importVisits(file)
+      setImportMessage({ type: "success", text: "Visits imported successfully!" })
+      // Refresh the visits list
+      mutate()
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to import visits"
+      setImportMessage({ type: "error", text: errorMessage })
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const { exportVisits } = await import("@/lib/api")
+      await exportVisits()
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to export visits"
+      setImportMessage({ type: "error", text: errorMessage })
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -98,6 +143,19 @@ export default function VisitsPage() {
           <p className="text-muted-foreground">View and manage patient visits</p>
         </div>
 
+        {/* Import/Export Message */}
+        {importMessage && (
+          <div
+            className={`mb-4 p-4 rounded-lg ${
+              importMessage.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}
+          >
+            {importMessage.text}
+          </div>
+        )}
+
         {/* Visits Card */}
         <Card>
           <CardHeader>
@@ -109,13 +167,32 @@ export default function VisitsPage() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 bg-transparent"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isImporting}
+                >
                   <Upload className="h-4 w-4" />
-                  Import
+                  {isImporting ? "Importing..." : "Import"}
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleImport}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 bg-transparent"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                >
                   <Download className="h-4 w-4" />
-                  Export
+                  {isExporting ? "Exporting..." : "Export"}
                 </Button>
                 <Button
                   size="sm"

@@ -156,7 +156,7 @@ export default function DashboardPage() {
                   config={{
                     count: {
                       label: "Count",
-                      color: "hsl(var(--primary))",
+                      color: "oklch(0.5 0.2 180)",
                     },
                   }}
                   className="h-[300px]"
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                       />
                       <YAxis className="text-xs fill-muted-foreground" />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="count" fill="oklch(0.5 0.2 180)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                   config={{
                     count: {
                       label: "Visits",
-                      color: "hsl(var(--primary))",
+                      color: "oklch(0.5 0.2 180)",
                     },
                   }}
                   className="h-[300px]"
@@ -232,9 +232,9 @@ export default function DashboardPage() {
                       <Line
                         type="monotone"
                         dataKey="count"
-                        stroke="hsl(var(--primary))"
+                        stroke="oklch(0.5 0.2 180)"
                         strokeWidth={2}
-                        dot={{ fill: "hsl(var(--primary))", r: 4 }}
+                        dot={{ fill: "oklch(0.5 0.2 180)", r: 4 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>

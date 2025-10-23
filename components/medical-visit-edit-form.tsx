@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import Image from 'next/image'
 
 interface MedicalVisitEditFormProps {
   visitId: number
@@ -73,14 +74,24 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
     medicalChartImage: null,
   })
 
+  const [patientName, setPatientName] = useState<string>("")
+  const [existingChartImage, setExistingChartImage] = useState<string | null>(null)
+
   useEffect(() => {
     const fetchVisit = async () => {
       try {
         setIsLoading(true)
         const visit = await getMedicalVisit(visitId)
 
+        const matchingPatient = patients?.find(
+          (p) => `${p.firstName} ${p.lastName}`.toLowerCase() === visit.fullName?.toLowerCase(),
+        )
+
+        setPatientName(visit.fullName || "")
+        setExistingChartImage(visit.medicalChartImage || null)
+
         setFormData({
-          patientId: visit.id?.toString() || "",
+          patientId: matchingPatient?.id.toString() || "",
           visitDate: visit.visitDate || "",
           chiefComplaint: visit.chiefComplaint || "",
           temperature: visit.temperature?.toString() || "",
@@ -106,7 +117,7 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
     }
 
     fetchVisit()
-  }, [visitId])
+  }, [visitId, patients])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -202,20 +213,9 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
         {/* Patient Selection */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Patient *</label>
-          <select
-            name="patientId"
-            value={formData.patientId}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            required
-          >
-            <option value="">Select a patient</option>
-            {patients?.map((patient) => (
-              <option key={patient.id} value={patient.id}>
-                {patient.firstName} {patient.lastName} {patient.studentNumber ? `(${patient.studentNumber})` : ""}
-              </option>
-            ))}
-          </select>
+          <div className="w-full px-3 py-2 border border-input rounded-md bg-muted text-foreground">
+            {patientName || "Loading..."}
+          </div>
         </div>
 
         {/* Visit Date */}
@@ -394,6 +394,18 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Medical Chart Image</label>
+              {existingChartImage && (
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-2">Current Image:</p>
+                  <Image
+                    src={existingChartImage || "/placeholder.svg"}
+                    alt="Medical Chart"
+                    width={500}
+                    height={300}
+                    className="max-w-xs h-auto rounded-md border border-input"
+                  />
+                </div>
+              )}
               <Input type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
               {formData.medicalChartImage && (
                 <p className="text-sm text-muted-foreground mt-2">Selected: {formData.medicalChartImage.name}</p>

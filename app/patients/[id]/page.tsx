@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import useSWR from "swr"
 import { fetchWithAuth } from "@/lib/auth"
+import { PatientVisitsSection } from "@/components/patient-visits-section"
 
 const fetcher = async (url: string) => {
   const response = await fetchWithAuth(url)
@@ -87,11 +88,26 @@ export default function PatientProfilePage() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="container mx-auto px-4 py-8">
+          <Button variant="ghost" onClick={() => router.push("/patients")} className="mb-4 gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Patients
+          </Button>
           <Card>
             <CardHeader>
-              <CardTitle>Error</CardTitle>
-              <CardDescription>Failed to load patient information.</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                Error Loading Patient
+              </CardTitle>
+              <CardDescription>
+                Unable to load patient information. Please check your connection and try again. If the problem persists,
+                contact support.
+              </CardDescription>
             </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Retry
+              </Button>
+            </CardContent>
           </Card>
         </main>
       </div>
@@ -356,6 +372,10 @@ export default function PatientProfilePage() {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        <div className="mt-8">
+          <PatientVisitsSection patientId={patient.id} patientName={`${patient.firstName} ${patient.lastName}`} />
         </div>
       </main>
     </div>
