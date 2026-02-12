@@ -230,12 +230,14 @@ export default function AddPatientPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="contactNumber">Contact Number</Label>
+                    <Label htmlFor="contactNumber">Contact Number *</Label>
                     <Input
                       id="contactNumber"
                       type="tel"
                       value={formData.contactNumber}
                       onChange={(e) => handleChange("contactNumber", e.target.value)}
+                      required
+                      minLength={6}
                     />
                   </div>
                 </div>

@@ -32,17 +32,20 @@ export interface Visit {
   respiratoryRate?: number
   spo2?: number
   history?: string
-  symptoms?: string
   physicalExamFindings?: string
   diagnosis?: string
   plan?: string
   treatment?: string
+  diagnosticTestResult?: string
+  diagnosticTestImage?: string
   // Medical visit specific fields
   hama?: string
   referralForm?: string
   medicalChartImage?: string
+  nursesNotes?: string
   // Dental visit specific fields
   dentalChartImage?: string
+  toothStatus?: string // JSON string of tooth status
 }
 
 export interface PatientList {
@@ -92,6 +95,16 @@ export interface User {
   username: string
   password?: string
   role: string
+}
+
+export interface AuditLog {
+  id: number
+  entityName: string
+  recordId: number
+  action: string
+  username: string
+  timestamp: string
+  details?: string
 }
 
 // SWR fetcher function
@@ -303,14 +316,16 @@ export async function createMedicalVisit(data: {
   respiratoryRate?: string
   spo2?: string
   history?: string
-  symptoms?: string
   physicalExamFindings?: string
   diagnosis?: string
   plan?: string
   treatment?: string
+  diagnosticTestResult?: string
   hama?: string
   referralForm?: string
+  nursesNotes?: string
   medicalChartImage?: File | null
+  diagnosticTestImage?: File | null
 }) {
   const formData = new FormData()
   formData.append("patientId", data.patientId)
@@ -323,16 +338,23 @@ export async function createMedicalVisit(data: {
   formData.append("respiratoryRate", data.respiratoryRate || "")
   formData.append("spo2", data.spo2 || "")
   formData.append("history", data.history || "")
-  formData.append("symptoms", data.symptoms || "")
   formData.append("physicalExamFindings", data.physicalExamFindings || "")
   formData.append("diagnosis", data.diagnosis || "")
   formData.append("plan", data.plan || "")
   formData.append("treatment", data.treatment || "")
+  formData.append("diagnosticTestResult", data.diagnosticTestResult || "")
   formData.append("hama", data.hama || "")
   formData.append("referralForm", data.referralForm || "")
+  formData.append("nursesNotes", data.nursesNotes || "")
 
   if (data.medicalChartImage) {
     formData.append("multipartFile", data.medicalChartImage)
+  } else {
+    formData.append("multipartFile", new File([], ""))
+  }
+
+  if (data.diagnosticTestImage) {
+    formData.append("diagnosticFile", data.diagnosticTestImage)
   }
 
   const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/add`, {
@@ -414,12 +436,14 @@ export async function createDentalVisit(data: {
   respiratoryRate?: string
   spo2?: string
   history?: string
-  symptoms?: string
   physicalExamFindings?: string
   diagnosis?: string
   plan?: string
   treatment?: string
+  diagnosticTestResult?: string
+  toothStatus?: string
   dentalChartImage?: File | null
+  diagnosticTestImage?: File | null
 }) {
   const formData = new FormData()
   formData.append("patientId", data.patientId)
@@ -432,14 +456,21 @@ export async function createDentalVisit(data: {
   formData.append("respiratoryRate", data.respiratoryRate || "")
   formData.append("spo2", data.spo2 || "")
   formData.append("history", data.history || "")
-  formData.append("symptoms", data.symptoms || "")
   formData.append("physicalExamFindings", data.physicalExamFindings || "")
   formData.append("diagnosis", data.diagnosis || "")
   formData.append("plan", data.plan || "")
   formData.append("treatment", data.treatment || "")
+  formData.append("diagnosticTestResult", data.diagnosticTestResult || "")
+  formData.append("toothStatus", data.toothStatus || "")
 
   if (data.dentalChartImage) {
     formData.append("multipartFile", data.dentalChartImage)
+  } else {
+    formData.append("multipartFile", new File([], ""))
+  }
+
+  if (data.diagnosticTestImage) {
+    formData.append("diagnosticFile", data.diagnosticTestImage)
   }
 
   const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/add`, {
@@ -467,14 +498,16 @@ export async function updateMedicalVisit(
     respiratoryRate?: string
     spo2?: string
     history?: string
-    symptoms?: string
     physicalExamFindings?: string
     diagnosis?: string
     plan?: string
     treatment?: string
+    diagnosticTestResult?: string
     hama?: string
     referralForm?: string
+    nursesNotes?: string
     medicalChartImage?: File | null
+    diagnosticTestImage?: File | null
   },
 ) {
   const formData = new FormData()
@@ -488,18 +521,23 @@ export async function updateMedicalVisit(
   formData.append("respiratoryRate", data.respiratoryRate || "")
   formData.append("spo2", data.spo2 || "")
   formData.append("history", data.history || "")
-  formData.append("symptoms", data.symptoms || "")
   formData.append("physicalExamFindings", data.physicalExamFindings || "")
   formData.append("diagnosis", data.diagnosis || "")
   formData.append("plan", data.plan || "")
   formData.append("treatment", data.treatment || "")
+  formData.append("diagnosticTestResult", data.diagnosticTestResult || "")
   formData.append("hama", data.hama || "")
   formData.append("referralForm", data.referralForm || "")
+  formData.append("nursesNotes", data.nursesNotes || "")
 
   if (data.medicalChartImage) {
     formData.append("multipartFile", data.medicalChartImage)
   } else {
     formData.append("multipartFile", new File([], ""))
+  }
+
+  if (data.diagnosticTestImage) {
+    formData.append("diagnosticFile", data.diagnosticTestImage)
   }
 
   const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/medical/update/${id}`, {
@@ -527,12 +565,14 @@ export async function updateDentalVisit(
     respiratoryRate?: string
     spo2?: string
     history?: string
-    symptoms?: string
     physicalExamFindings?: string
     diagnosis?: string
     plan?: string
     treatment?: string
+    diagnosticTestResult?: string
+    toothStatus?: string
     dentalChartImage?: File | null
+    diagnosticTestImage?: File | null
   },
 ) {
   const formData = new FormData()
@@ -546,16 +586,21 @@ export async function updateDentalVisit(
   formData.append("respiratoryRate", data.respiratoryRate || "")
   formData.append("spo2", data.spo2 || "")
   formData.append("history", data.history || "")
-  formData.append("symptoms", data.symptoms || "")
   formData.append("physicalExamFindings", data.physicalExamFindings || "")
   formData.append("diagnosis", data.diagnosis || "")
   formData.append("plan", data.plan || "")
   formData.append("treatment", data.treatment || "")
+  formData.append("diagnosticTestResult", data.diagnosticTestResult || "")
+  formData.append("toothStatus", data.toothStatus || "")
 
   if (data.dentalChartImage) {
     formData.append("multipartFile", data.dentalChartImage)
   } else {
     formData.append("multipartFile", new File([], ""))
+  }
+
+  if (data.diagnosticTestImage) {
+    formData.append("diagnosticFile", data.diagnosticTestImage)
   }
 
   const response = await fetchWithAuth(`${API_BASE_URL}/api/visits/dental/update/${id}`, {
@@ -666,4 +711,14 @@ export async function deleteUser(id: number) {
     const text = await response.text()
     return text || { success: true }
   }
+}
+
+export async function getAuditLogs(entityName: string, recordId: number) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/audit/${entityName}/${recordId}`)
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch audit logs")
+  }
+
+  return response.json()
 }

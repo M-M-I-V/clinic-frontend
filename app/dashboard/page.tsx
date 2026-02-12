@@ -6,7 +6,7 @@ import { Header } from "@/components/header"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, TrendingUp, UserPlus, Stethoscope, Bluetooth as Tooth } from "lucide-react"
+import { Calendar, TrendingUp, UserPlus, Stethoscope, ClipboardPlus} from "lucide-react"
 import { useKPIs, useTopDiagnoses, useVisitsTrend } from "@/lib/api"
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
@@ -114,16 +114,28 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-3">
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2 bg-transparent">
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col items-center gap-2 bg-transparent"
+                onClick={() => router.push("/patients/add")}
+              >
                 <UserPlus className="h-5 w-5 text-primary" />
                 <span className="text-sm font-medium">New Patient</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2 bg-transparent">
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col items-center gap-2 bg-transparent"
+                onClick={() => router.push("/visits/medical/add")}
+              >
                 <Stethoscope className="h-5 w-5 text-primary" />
                 <span className="text-sm font-medium">New Medical Visit</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2 bg-transparent">
-                <Tooth className="h-5 w-5 text-primary" />
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col items-center gap-2 bg-transparent"
+                onClick={() => router.push("/visits/dental/add")}
+              >
+                <ClipboardPlus className="h-5 w-5 text-primary" />
                 <span className="text-sm font-medium">New Dental Visit</span>
               </Button>
             </div>

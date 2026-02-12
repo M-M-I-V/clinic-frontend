@@ -30,7 +30,7 @@ export default function AddMedicalVisitPage() {
   }
 
   // Check if user has required role (MD or NURSE)
-  const hasAccess = ["MD", "NURSE"].includes(user.role)
+  const hasAccess = ["MD"].includes(user.role)
 
   if (!hasAccess) {
     return (

@@ -10,7 +10,7 @@ interface Visit {
   birthDate: string
   visitDate: string
   visitType: string
-  symptoms?: string
+  chiefComplaint?: string
   physicalExamFindings?: string
   diagnosis?: string
   treatment?: string
@@ -43,7 +43,7 @@ export function VisitsTable({ visits }: VisitsTableProps) {
           <TableRow className="bg-muted/50">
             <TableHead className="font-semibold">Date</TableHead>
             <TableHead className="font-semibold">Patient</TableHead>
-            <TableHead className="font-semibold">Symptoms</TableHead>
+            <TableHead className="font-semibold">Chief Complaint</TableHead>
             <TableHead className="font-semibold">Physical Exam</TableHead>
             <TableHead className="font-semibold">Diagnosis</TableHead>
             <TableHead className="font-semibold">Treatment</TableHead>
@@ -59,7 +59,7 @@ export function VisitsTable({ visits }: VisitsTableProps) {
             >
               <TableCell className="font-medium">{formatDate(visit.visitDate)}</TableCell>
               <TableCell className="text-primary hover:underline">{visit.fullName}</TableCell>
-              <TableCell className="text-sm">{visit.symptoms || "—"}</TableCell>
+              <TableCell className="text-sm">{visit.chiefComplaint || "—"}</TableCell>
               <TableCell className="text-sm">{visit.physicalExamFindings || "—"}</TableCell>
               <TableCell className="text-sm">{visit.diagnosis || "—"}</TableCell>
               <TableCell className="text-sm">{visit.treatment || "—"}</TableCell>

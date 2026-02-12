@@ -162,7 +162,7 @@ export default function EditUserPage() {
                 />
               </div>
 
-              <div className="space-y-2">
+                <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
@@ -170,9 +170,14 @@ export default function EditUserPage() {
                   value={formData.password}
                   onChange={(e) => handleChange("password", e.target.value)}
                   placeholder="Leave empty to keep current password"
+                  minLength={6}
+                  title="Password must be at least 6 characters"
                 />
                 <p className="text-xs text-muted-foreground">Leave empty to keep the current password</p>
-              </div>
+                {formData.password && formData.password.length > 0 && formData.password.length < 6 && (
+                  <p className="text-xs text-destructive">Password must be at least 6 characters long.</p>
+                )}
+                </div>
 
               <div className="space-y-2">
                 <Label htmlFor="role">

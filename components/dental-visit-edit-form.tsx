@@ -1,5 +1,7 @@
 "use client"
 
+import { Separator } from "@/components/ui/separator"
+
 import type React from "react"
 
 import { useState, useEffect } from "react"
@@ -18,7 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import Image from 'next/image'
+import Image from "next/image"
+import DentalChart from "@/components/dental-chart"
 
 interface DentalVisitEditFormProps {
   visitId: number
@@ -34,11 +37,13 @@ interface DentalVisitFormData {
   respiratoryRate: string
   spo2: string
   history: string
-  symptoms: string
   physicalExamFindings: string
   diagnosis: string
   plan: string
   treatment: string
+  diagnosticTestResult: string
+  toothStatus: string
+  diagnosticTestImage: File | null
   dentalChartImage: File | null
 }
 
@@ -62,16 +67,19 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
     respiratoryRate: "",
     spo2: "",
     history: "",
-    symptoms: "",
     physicalExamFindings: "",
     diagnosis: "",
     plan: "",
     treatment: "",
+    diagnosticTestResult: "",
+    toothStatus: "",
+    diagnosticTestImage: null,
     dentalChartImage: null,
   })
 
   const [patientName, setPatientName] = useState<string>("")
   const [existingChartImage, setExistingChartImage] = useState<string | null>(null)
+  const [existingDiagnosticImage, setExistingDiagnosticImage] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchVisit = async () => {
@@ -85,6 +93,7 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
 
         setPatientName(visit.fullName || "")
         setExistingChartImage(visit.dentalChartImage || null)
+        setExistingDiagnosticImage(visit.diagnosticTestImage || null)
 
         setFormData({
           patientId: matchingPatient?.id.toString() || "",
@@ -96,11 +105,13 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
           respiratoryRate: visit.respiratoryRate?.toString() || "",
           spo2: visit.spo2?.toString() || "",
           history: visit.history || "",
-          symptoms: visit.symptoms || "",
           physicalExamFindings: visit.physicalExamFindings || "",
           diagnosis: visit.diagnosis || "",
           plan: visit.plan || "",
           treatment: visit.treatment || "",
+          diagnosticTestResult: visit.diagnosticTestResult || "",
+          toothStatus: visit.toothStatus || "",
+          diagnosticTestImage: null,
           dentalChartImage: null,
         })
       } catch (err) {
@@ -124,9 +135,10 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      const inputName = (e.target as HTMLInputElement).name
       setFormData((prev) => ({
         ...prev,
-        dentalChartImage: file,
+        [inputName === "diagnosticTestImage" ? "diagnosticTestImage" : "dentalChartImage"]: file,
       }))
     }
   }
@@ -238,7 +250,7 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Temperature (°C)</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Temperature (°C)*</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -246,40 +258,44 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
                   value={formData.temperature}
                   onChange={handleInputChange}
                   placeholder="e.g., 37.5"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Blood Pressure</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Blood Pressure*</label>
                 <Input
                   type="text"
                   name="bloodPressure"
                   value={formData.bloodPressure}
                   onChange={handleInputChange}
                   placeholder="e.g., 120/80"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Pulse Rate (bpm)</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Pulse Rate (bpm)*</label>
                 <Input
                   type="number"
                   name="pulseRate"
                   value={formData.pulseRate}
                   onChange={handleInputChange}
                   placeholder="e.g., 72"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Respiratory Rate (breaths/min)</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Respiratory Rate (breaths/min)*</label>
                 <Input
                   type="number"
                   name="respiratoryRate"
                   value={formData.respiratoryRate}
                   onChange={handleInputChange}
                   placeholder="e.g., 16"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">SpO2 (%)</label>
+                <label className="block text-sm font-medium text-foreground mb-2">SpO2 (%)*</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -287,6 +303,7 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
                   value={formData.spo2}
                   onChange={handleInputChange}
                   placeholder="e.g., 98.5"
+                  required
                 />
               </div>
             </div>
@@ -309,15 +326,6 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Symptoms</label>
-              <Textarea
-                name="symptoms"
-                value={formData.symptoms}
-                onChange={handleInputChange}
-                placeholder="Current symptoms"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-foreground mb-2">Physical Exam Findings</label>
               <Textarea
                 name="physicalExamFindings"
@@ -325,6 +333,40 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
                 onChange={handleInputChange}
                 placeholder="Physical examination findings"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Result</label>
+              <Textarea
+                name="diagnosticTestResult"
+                value={formData.diagnosticTestResult}
+                onChange={handleInputChange}
+                placeholder="Results of diagnostic tests"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Image</label>
+              {existingDiagnosticImage && (
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-2">Current Image:</p>
+                  <Image
+                    src={existingDiagnosticImage || "/placeholder.svg"}
+                    alt="Diagnostic Test"
+                    width={500}
+                    height={300}
+                    className="max-w-xs h-auto rounded-md border border-input"
+                  />
+                </div>
+              )}
+              <Input
+                type="file"
+                name="diagnosticTestImage"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="cursor-pointer"
+              />
+              {formData.diagnosticTestImage && (
+                <p className="text-sm text-muted-foreground mt-2">Selected: {formData.diagnosticTestImage.name}</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -363,9 +405,53 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
         {/* Dental Chart Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Dental Chart</CardTitle>
+            <CardTitle className="text-base">Dental Chart & Imaging</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-3">Tooth Status</label>
+              <DentalChart
+                value={formData.toothStatus ? JSON.parse(formData.toothStatus) : {}}
+                onChange={(data) => setFormData((prev) => ({ ...prev, toothStatus: JSON.stringify(data) }))}
+              />
+            </div>
+
+            <Separator />
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Result</label>
+              <Textarea
+                name="diagnosticTestResult"
+                value={formData.diagnosticTestResult}
+                onChange={handleInputChange}
+                placeholder="Results of diagnostic tests"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Image</label>
+              {existingDiagnosticImage && (
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-2">Current Image:</p>
+                  <Image
+                    src={existingDiagnosticImage || "/placeholder.svg"}
+                    alt="Diagnostic Test"
+                    width={500}
+                    height={300}
+                    className="max-w-xs h-auto rounded-md border border-input"
+                  />
+                </div>
+              )}
+              <Input
+                type="file"
+                name="diagnosticTestImage"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="cursor-pointer"
+              />
+              {formData.diagnosticTestImage && (
+                <p className="text-sm text-muted-foreground mt-2">Selected: {formData.diagnosticTestImage.name}</p>
+              )}
+            </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Dental Chart Image</label>
               {existingChartImage && (
@@ -380,7 +466,13 @@ export function DentalVisitEditForm({ visitId }: DentalVisitEditFormProps) {
                   />
                 </div>
               )}
-              <Input type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
+              <Input
+                type="file"
+                name="dentalChartImage"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="cursor-pointer"
+              />
               {formData.dentalChartImage && (
                 <p className="text-sm text-muted-foreground mt-2">Selected: {formData.dentalChartImage.name}</p>
               )}

@@ -110,7 +110,7 @@ export default function AddUserPage() {
                 />
               </div>
 
-              <div className="space-y-2">
+                <div className="space-y-2">
                 <Label htmlFor="password">
                   Password <span className="text-destructive">*</span>
                 </Label>
@@ -119,10 +119,12 @@ export default function AddUserPage() {
                   type="password"
                   value={formData.password}
                   onChange={(e) => handleChange("password", e.target.value)}
-                  placeholder="Enter password"
+                  placeholder="Enter password (min 6 characters)"
                   required
+                  minLength={6}
                 />
-              </div>
+                <p className="text-sm text-muted-foreground">Passwords must be at least 6 characters long.</p>
+                </div>
 
               <div className="space-y-2">
                 <Label htmlFor="role">

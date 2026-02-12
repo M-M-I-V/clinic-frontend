@@ -36,7 +36,7 @@ export default function EditVisitPage() {
     return null
   }
 
-  const hasAccess = ["MD", "DMD", "NURSE"].includes(user.role)
+  const hasAccess = ["MD", "DMD"].includes(user.role)
 
   if (!hasAccess) {
     return (

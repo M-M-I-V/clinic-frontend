@@ -1,5 +1,7 @@
 "use client"
 
+import { Separator } from "@/components/ui/separator"
+
 import type React from "react"
 
 import { useState } from "react"
@@ -10,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createDentalVisit } from "@/lib/api"
 import { usePatientsList } from "@/lib/api"
+import DentalChart from "@/components/dental-chart"
 
 export function DentalVisitForm() {
   const router = useRouter()
@@ -28,12 +31,14 @@ export function DentalVisitForm() {
     respiratoryRate: "",
     spo2: "",
     history: "",
-    symptoms: "",
     physicalExamFindings: "",
     diagnosis: "",
     plan: "",
     treatment: "",
+    diagnosticTestResult: "",
+    toothStatus: "",
     dentalChartImage: null as File | null,
+    diagnosticTestImage: null as File | null,
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -45,11 +50,12 @@ export function DentalVisitForm() {
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name } = e.target
     const file = e.target.files?.[0]
     if (file) {
       setFormData((prev) => ({
         ...prev,
-        dentalChartImage: file,
+        [name]: file,
       }))
     }
   }
@@ -72,7 +78,10 @@ export function DentalVisitForm() {
         throw new Error("Please enter the chief complaint")
       }
 
-      await createDentalVisit(formData)
+      await createDentalVisit({
+        ...formData,
+        toothStatus: formData.toothStatus,
+      })
       setSuccess(true)
 
       // Redirect to visits page after 2 seconds
@@ -153,7 +162,7 @@ export function DentalVisitForm() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Temperature (°C)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Temperature (°C)*</label>
               <Input
                 type="number"
                 step="0.1"
@@ -161,40 +170,44 @@ export function DentalVisitForm() {
                 value={formData.temperature}
                 onChange={handleInputChange}
                 placeholder="e.g., 37.5"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Blood Pressure</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Blood Pressure*</label>
               <Input
                 type="text"
                 name="bloodPressure"
                 value={formData.bloodPressure}
                 onChange={handleInputChange}
                 placeholder="e.g., 120/80"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Pulse Rate (bpm)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Pulse Rate (bpm)*</label>
               <Input
                 type="number"
                 name="pulseRate"
                 value={formData.pulseRate}
                 onChange={handleInputChange}
                 placeholder="e.g., 72"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Respiratory Rate (breaths/min)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Respiratory Rate (breaths/min)*</label>
               <Input
                 type="number"
                 name="respiratoryRate"
                 value={formData.respiratoryRate}
                 onChange={handleInputChange}
                 placeholder="e.g., 16"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">SpO2 (%)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">SpO2 (%)*</label>
               <Input
                 type="number"
                 step="0.1"
@@ -202,6 +215,7 @@ export function DentalVisitForm() {
                 value={formData.spo2}
                 onChange={handleInputChange}
                 placeholder="e.g., 98.5"
+                required
               />
             </div>
           </div>
@@ -221,15 +235,6 @@ export function DentalVisitForm() {
               value={formData.history}
               onChange={handleInputChange}
               placeholder="Relevant medical history"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Symptoms</label>
-            <Textarea
-              name="symptoms"
-              value={formData.symptoms}
-              onChange={handleInputChange}
-              placeholder="Current symptoms"
             />
           </div>
           <div>
@@ -278,14 +283,52 @@ export function DentalVisitForm() {
       {/* Dental Chart Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Dental Chart</CardTitle>
+          <CardTitle className="text-base">Dental Chart & Imaging</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-3">Tooth Status</label>
+            <DentalChart
+              value={formData.toothStatus ? JSON.parse(formData.toothStatus) : {}}
+              onChange={(data) => setFormData((prev) => ({ ...prev, toothStatus: JSON.stringify(data) }))}
+            />
+          </div>
+
+          <Separator />
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Result</label>
+            <Textarea
+              name="diagnosticTestResult"
+              value={formData.diagnosticTestResult}
+              onChange={handleInputChange}
+              placeholder="Results of diagnostic tests"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Dental Chart Image</label>
-            <Input type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
+            <Input
+              type="file"
+              name="dentalChartImage"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="cursor-pointer"
+            />
             {formData.dentalChartImage && (
               <p className="text-sm text-muted-foreground mt-2">Selected: {formData.dentalChartImage.name}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Image</label>
+            <Input
+              type="file"
+              name="diagnosticTestImage"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="cursor-pointer"
+            />
+            {formData.diagnosticTestImage && (
+              <p className="text-sm text-muted-foreground mt-2">Selected: {formData.diagnosticTestImage.name}</p>
             )}
           </div>
         </CardContent>

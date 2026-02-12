@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { AuditTrail } from "@/components/audit-trail"
 
 export default function VisitProfilePage() {
   const router = useRouter()
@@ -222,12 +223,16 @@ export default function VisitProfilePage() {
               </div>
               {!canEditDelete() && (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                   <p className="text-sm text-amber-800">{getPermissionMessage()}</p>
                 </div>
               )}
             </div>
           </div>
+        </div>
+
+        <div className="mb-8">
+          <AuditTrail entityName={visitType === "DENTAL" ? "DentalVisits" : "MedicalVisits"} recordId={visitId} />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -341,7 +346,7 @@ export default function VisitProfilePage() {
           )}
 
           {/* Clinical History */}
-          {(visit.history || visit.symptoms || visit.physicalExamFindings) && (
+          {(visit.history || visit.physicalExamFindings || visit.diagnosticTestResult || visit.diagnosticTestImage) && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Clinical History</CardTitle>
@@ -356,19 +361,34 @@ export default function VisitProfilePage() {
                     <Separator />
                   </>
                 )}
-                {visit.symptoms && (
+                {visit.physicalExamFindings && (
                   <>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Symptoms</p>
-                      <p className="text-base mt-2">{visit.symptoms}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Physical Exam Findings</p>
+                      <p className="text-base mt-2">{visit.physicalExamFindings}</p>
                     </div>
                     <Separator />
                   </>
                 )}
-                {visit.physicalExamFindings && (
+                {visit.diagnosticTestResult && (
+                  <>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Diagnostic Test Result</p>
+                      <p className="text-base mt-2">{visit.diagnosticTestResult}</p>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+                {visit.diagnosticTestImage && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Physical Exam Findings</p>
-                    <p className="text-base mt-2">{visit.physicalExamFindings}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Diagnostic Test Image</p>
+                    <Image
+                      src={visit.diagnosticTestImage || "/placeholder.svg"}
+                      alt="Diagnostic Test"
+                      width={600}
+                      height={400}
+                      className="mt-2 max-w-full h-auto rounded-md border border-border"
+                    />
                   </div>
                 )}
               </CardContent>
@@ -402,63 +422,111 @@ export default function VisitProfilePage() {
           </Card>
 
           {/* Medical Visit Specific Fields */}
-          {visitType === "MEDICAL" && (visit.hama || visit.referralForm || visit.medicalChartImage) && (
+          {visitType === "MEDICAL" &&
+            (visit.hama || visit.referralForm || visit.medicalChartImage || visit.nursesNotes) && (
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-base">Medical Visit Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {visit.hama && (
+                    <>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">HAMA</p>
+                        <p className="text-base mt-2">{visit.hama}</p>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+                  {visit.referralForm && (
+                    <>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Referral Form</p>
+                        <p className="text-base mt-2">{visit.referralForm}</p>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+                  {visit.nursesNotes && (
+                    <>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Nurse Notes</p>
+                        <p className="text-base mt-2 whitespace-pre-wrap">{visit.nursesNotes}</p>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+                  {visit.medicalChartImage && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Medical Chart Image</p>
+                      <Image
+                        src={visit.medicalChartImage || "/placeholder.svg"}
+                        alt="Medical Chart"
+                        width={600}
+                        height={400}
+                        className="mt-2 max-w-full h-auto rounded-md border border-border"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+          {/* Dental Visit Specific Fields */}
+          {visitType === "DENTAL" && (visit.dentalChartImage || visit.toothStatus) && (
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle className="text-base">Medical Visit Details</CardTitle>
+                <CardTitle className="text-base">Dental Visit Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {visit.hama && (
+                {visit.toothStatus && (
                   <>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">HAMA</p>
-                      <p className="text-base mt-2">{visit.hama}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Tooth Status</p>
+                      <div className="mt-3 p-3 bg-muted rounded-md">
+                        <div className="text-xs space-y-1">
+                          {Object.entries(JSON.parse(visit.toothStatus)).map(([tooth, status]) => (
+                            <div key={tooth} className="flex items-center gap-2">
+                              <span className="font-medium w-8">{tooth}:</span>
+                              <span
+                                className={`px-2 py-1 rounded text-white text-xs font-medium ${
+                                  status === "C"
+                                    ? "bg-red-500"
+                                    : status === "X"
+                                      ? "bg-gray-700"
+                                      : status === "V"
+                                        ? "bg-green-500"
+                                        : "bg-gray-300"
+                                }`}
+                              >
+                                {status === "C"
+                                  ? "Caries"
+                                  : status === "X"
+                                    ? "Extraction"
+                                    : status === "V"
+                                      ? "No Caries"
+                                      : "—"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     <Separator />
                   </>
                 )}
-                {visit.referralForm && (
-                  <>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Referral Form</p>
-                      <p className="text-base mt-2">{visit.referralForm}</p>
-                    </div>
-                    <Separator />
-                  </>
-                )}
-                {visit.medicalChartImage && (
+                {visit.dentalChartImage && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Medical Chart Image</p>
+                    <p className="text-sm font-medium text-muted-foreground">Dental Chart Image</p>
                     <Image
-                      src={visit.medicalChartImage || "/placeholder.svg"}
-                      alt="Medical Chart"
+                      src={visit.dentalChartImage || "/placeholder.svg"}
+                      alt="Dental Chart"
                       width={600}
                       height={400}
                       className="mt-2 max-w-full h-auto rounded-md border border-border"
                     />
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Dental Visit Specific Fields */}
-          {visitType === "DENTAL" && visit.dentalChartImage && (
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-base">Dental Visit Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Dental Chart Image</p>
-                  <Image
-                    src={visit.dentalChartImage || "/placeholder.svg"}
-                    alt="Dental Chart"
-                    width={600}
-                    height={400}
-                    className="mt-2 max-w-full h-auto rounded-md border border-border"
-                  />
-                </div>
               </CardContent>
             </Card>
           )}

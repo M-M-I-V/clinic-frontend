@@ -26,6 +26,7 @@ import {
 import useSWR from "swr"
 import { fetchWithAuth } from "@/lib/auth"
 import { PatientVisitsSection } from "@/components/patient-visits-section"
+import { AuditTrail } from "@/components/audit-trail"
 
 const fetcher = async (url: string) => {
   const response = await fetchWithAuth(url)
@@ -155,6 +156,10 @@ export default function PatientProfilePage() {
               Edit Profile
             </Button>
           </div>
+        </div>
+
+        <div className="mb-8">
+          <AuditTrail entityName="Patients" recordId={patient.id} />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">

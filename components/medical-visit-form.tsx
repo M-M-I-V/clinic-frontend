@@ -28,14 +28,16 @@ export function MedicalVisitForm() {
     respiratoryRate: "",
     spo2: "",
     history: "",
-    symptoms: "",
     physicalExamFindings: "",
     diagnosis: "",
     plan: "",
     treatment: "",
+    diagnosticTestResult: "",
     hama: "",
     referralForm: "",
+    nursesNotes: "",
     medicalChartImage: null as File | null,
+    diagnosticTestImage: null as File | null,
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -47,11 +49,12 @@ export function MedicalVisitForm() {
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name } = e.target
     const file = e.target.files?.[0]
     if (file) {
       setFormData((prev) => ({
         ...prev,
-        medicalChartImage: file,
+        [name]: file,
       }))
     }
   }
@@ -155,7 +158,7 @@ export function MedicalVisitForm() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Temperature (°C)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Temperature (°C)*</label>
               <Input
                 type="number"
                 step="0.1"
@@ -163,40 +166,44 @@ export function MedicalVisitForm() {
                 value={formData.temperature}
                 onChange={handleInputChange}
                 placeholder="e.g., 37.5"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Blood Pressure</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Blood Pressure*</label>
               <Input
                 type="text"
                 name="bloodPressure"
                 value={formData.bloodPressure}
                 onChange={handleInputChange}
                 placeholder="e.g., 120/80"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Pulse Rate (bpm)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Pulse Rate (bpm)*</label>
               <Input
                 type="number"
                 name="pulseRate"
                 value={formData.pulseRate}
                 onChange={handleInputChange}
                 placeholder="e.g., 72"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Respiratory Rate (breaths/min)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Respiratory Rate (breaths/min)*</label>
               <Input
                 type="number"
                 name="respiratoryRate"
                 value={formData.respiratoryRate}
                 onChange={handleInputChange}
                 placeholder="e.g., 16"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">SpO2 (%)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">SpO2 (%)*</label>
               <Input
                 type="number"
                 step="0.1"
@@ -204,6 +211,7 @@ export function MedicalVisitForm() {
                 value={formData.spo2}
                 onChange={handleInputChange}
                 placeholder="e.g., 98.5"
+                required
               />
             </div>
           </div>
@@ -223,15 +231,6 @@ export function MedicalVisitForm() {
               value={formData.history}
               onChange={handleInputChange}
               placeholder="Relevant medical history"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Symptoms</label>
-            <Textarea
-              name="symptoms"
-              value={formData.symptoms}
-              onChange={handleInputChange}
-              placeholder="Current symptoms"
             />
           </div>
           <div>
@@ -304,10 +303,47 @@ export function MedicalVisitForm() {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Result</label>
+            <Textarea
+              name="diagnosticTestResult"
+              value={formData.diagnosticTestResult}
+              onChange={handleInputChange}
+              placeholder="Results of diagnostic tests"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Nurses Notes</label>
+            <Textarea
+              name="nursesNotes"
+              value={formData.nursesNotes}
+              onChange={handleInputChange}
+              placeholder="Bulleted notes from nursing staff"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-foreground mb-2">Medical Chart Image</label>
-            <Input type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
+            <Input
+              type="file"
+              name="medicalChartImage"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="cursor-pointer"
+            />
             {formData.medicalChartImage && (
               <p className="text-sm text-muted-foreground mt-2">Selected: {formData.medicalChartImage.name}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Image</label>
+            <Input
+              type="file"
+              name="diagnosticTestImage"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="cursor-pointer"
+            />
+            {formData.diagnosticTestImage && (
+              <p className="text-sm text-muted-foreground mt-2">Selected: {formData.diagnosticTestImage.name}</p>
             )}
           </div>
         </CardContent>

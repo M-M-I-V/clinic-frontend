@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import Image from 'next/image'
+import Image from "next/image"
 
 interface MedicalVisitEditFormProps {
   visitId: number
@@ -34,11 +34,13 @@ interface MedicalVisitFormData {
   respiratoryRate: string
   spo2: string
   history: string
-  symptoms: string
   physicalExamFindings: string
   diagnosis: string
   plan: string
   treatment: string
+  diagnosticTestResult: string
+  diagnosticTestImage: File | null
+  nursesNotes: string
   hama: string
   referralForm: string
   medicalChartImage: File | null
@@ -64,11 +66,13 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
     respiratoryRate: "",
     spo2: "",
     history: "",
-    symptoms: "",
     physicalExamFindings: "",
     diagnosis: "",
     plan: "",
     treatment: "",
+    diagnosticTestResult: "",
+    diagnosticTestImage: null,
+    nursesNotes: "",
     hama: "",
     referralForm: "",
     medicalChartImage: null,
@@ -76,6 +80,7 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
 
   const [patientName, setPatientName] = useState<string>("")
   const [existingChartImage, setExistingChartImage] = useState<string | null>(null)
+  const [existingDiagnosticImage, setExistingDiagnosticImage] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchVisit = async () => {
@@ -89,6 +94,7 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
 
         setPatientName(visit.fullName || "")
         setExistingChartImage(visit.medicalChartImage || null)
+        setExistingDiagnosticImage(visit.diagnosticTestImage || null)
 
         setFormData({
           patientId: matchingPatient?.id.toString() || "",
@@ -100,11 +106,13 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
           respiratoryRate: visit.respiratoryRate?.toString() || "",
           spo2: visit.spo2?.toString() || "",
           history: visit.history || "",
-          symptoms: visit.symptoms || "",
           physicalExamFindings: visit.physicalExamFindings || "",
           diagnosis: visit.diagnosis || "",
           plan: visit.plan || "",
           treatment: visit.treatment || "",
+          diagnosticTestResult: visit.diagnosticTestResult || "",
+          diagnosticTestImage: null,
+          nursesNotes: visit.nursesNotes || "",
           hama: visit.hama || "",
           referralForm: visit.referralForm || "",
           medicalChartImage: null,
@@ -130,9 +138,10 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      const inputName = (e.target as HTMLInputElement).name
       setFormData((prev) => ({
         ...prev,
-        medicalChartImage: file,
+        [inputName === "diagnosticTestImage" ? "diagnosticTestImage" : "medicalChartImage"]: file,
       }))
     }
   }
@@ -244,7 +253,7 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Temperature (°C)</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Temperature (°C)*</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -252,40 +261,44 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
                   value={formData.temperature}
                   onChange={handleInputChange}
                   placeholder="e.g., 37.5"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Blood Pressure</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Blood Pressure*</label>
                 <Input
                   type="text"
                   name="bloodPressure"
                   value={formData.bloodPressure}
                   onChange={handleInputChange}
                   placeholder="e.g., 120/80"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Pulse Rate (bpm)</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Pulse Rate (bpm)*</label>
                 <Input
                   type="number"
                   name="pulseRate"
                   value={formData.pulseRate}
                   onChange={handleInputChange}
                   placeholder="e.g., 72"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Respiratory Rate (breaths/min)</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Respiratory Rate (breaths/min)*</label>
                 <Input
                   type="number"
                   name="respiratoryRate"
                   value={formData.respiratoryRate}
                   onChange={handleInputChange}
                   placeholder="e.g., 16"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">SpO2 (%)</label>
+                <label className="block text-sm font-medium text-foreground mb-2">SpO2 (%)*</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -293,6 +306,7 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
                   value={formData.spo2}
                   onChange={handleInputChange}
                   placeholder="e.g., 98.5"
+                  required
                 />
               </div>
             </div>
@@ -315,15 +329,6 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Symptoms</label>
-              <Textarea
-                name="symptoms"
-                value={formData.symptoms}
-                onChange={handleInputChange}
-                placeholder="Current symptoms"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-foreground mb-2">Physical Exam Findings</label>
               <Textarea
                 name="physicalExamFindings"
@@ -331,6 +336,40 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
                 onChange={handleInputChange}
                 placeholder="Physical examination findings"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Result</label>
+              <Textarea
+                name="diagnosticTestResult"
+                value={formData.diagnosticTestResult}
+                onChange={handleInputChange}
+                placeholder="Results of diagnostic tests"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Diagnostic Test Image</label>
+              {existingDiagnosticImage && (
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-2">Current Image:</p>
+                  <Image
+                    src={existingDiagnosticImage || "/placeholder.svg"}
+                    alt="Diagnostic Test"
+                    width={500}
+                    height={300}
+                    className="max-w-xs h-auto rounded-md border border-input"
+                  />
+                </div>
+              )}
+              <Input
+                type="file"
+                name="diagnosticTestImage"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="cursor-pointer"
+              />
+              {formData.diagnosticTestImage && (
+                <p className="text-sm text-muted-foreground mt-2">Selected: {formData.diagnosticTestImage.name}</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -361,6 +400,15 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
                 value={formData.treatment}
                 onChange={handleInputChange}
                 placeholder="Treatment provided"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Nurse Notes</label>
+              <Textarea
+                name="nursesNotes"
+                value={formData.nursesNotes}
+                onChange={handleInputChange}
+                placeholder="Nursing notes (bulleted format)"
               />
             </div>
           </CardContent>
@@ -406,7 +454,13 @@ export function MedicalVisitEditForm({ visitId }: MedicalVisitEditFormProps) {
                   />
                 </div>
               )}
-              <Input type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
+              <Input
+                type="file"
+                name="medicalChartImage"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="cursor-pointer"
+              />
               {formData.medicalChartImage && (
                 <p className="text-sm text-muted-foreground mt-2">Selected: {formData.medicalChartImage.name}</p>
               )}

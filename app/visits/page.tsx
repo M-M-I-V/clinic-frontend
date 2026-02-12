@@ -8,7 +8,7 @@ import { Header } from "@/components/header"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, Upload, Plus, AlertCircle } from "lucide-react"
+import { Download, Upload, Plus, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { VisitsTable } from "@/components/visits-table"
 import { useVisits } from "@/lib/api"
 import { useRef } from "react"
@@ -23,6 +23,8 @@ export default function VisitsPage() {
   const [isImporting, setIsImporting] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -30,6 +32,10 @@ export default function VisitsPage() {
       router.push("/")
     }
   }, [user, isLoading, router])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filter])
 
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -105,6 +111,11 @@ export default function VisitsPage() {
     if (filter === "all") return true
     return visit.visitType.toLowerCase() === filter
   })
+
+  const totalPages = Math.ceil((filteredVisits?.length || 0) / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedVisits = filteredVisits?.slice(startIndex, endIndex) || []
 
   if (error) {
     return (
@@ -254,7 +265,38 @@ export default function VisitsPage() {
                 No visits found
               </div>
             ) : (
-              <VisitsTable visits={filteredVisits} />
+              <>
+                <VisitsTable visits={paginatedVisits} />
+
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages} • Showing {startIndex + 1}-
+                    {Math.min(endIndex, filteredVisits.length)} of {filteredVisits.length}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="gap-1"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

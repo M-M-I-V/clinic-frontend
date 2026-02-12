@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { UserPlus, Search, Pencil, Trash2, Upload, Download } from "lucide-react"
+import { UserPlus, Search, Pencil, Trash2, Upload, Download, ChevronLeft, ChevronRight } from "lucide-react"
 import { mutate } from "swr"
 import { Label } from "@/components/ui/label"
 
@@ -40,6 +40,8 @@ export default function PatientsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [genderFilter, setGenderFilter] = useState<string>("all")
   const [lastNameLetter, setLastNameLetter] = useState<string>("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [patientToDelete, setPatientToDelete] = useState<{ id: number; name: string } | null>(null)
@@ -76,6 +78,16 @@ export default function PatientsPage() {
       return matchesSearch && matchesStatus && matchesGender && matchesLastNameLetter
     })
   }, [patients, searchQuery, statusFilter, genderFilter, lastNameLetter])
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedPatients = filteredPatients.slice(startIndex, endIndex)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, statusFilter, genderFilter, lastNameLetter])
 
   const handleDeleteClick = (id: number, firstName: string, lastName: string) => {
     setPatientToDelete({ id, name: `${firstName} ${lastName}` })
@@ -296,55 +308,86 @@ export default function PatientsPage() {
                 No patients found
               </div>
             ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Student Number</TableHead>
-                      <TableHead>Gender</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPatients.map((patient) => (
-                      <TableRow key={patient.id}>
-                        <TableCell>
-                          <Link href={`/patients/${patient.id}`} className="font-medium text-primary hover:underline">
-                            {patient.firstName} {patient.lastName}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{patient.studentNumber || "—"}</TableCell>
-                        <TableCell>{patient.gender}</TableCell>
-                        <TableCell>{patient.status}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => router.push(`/patients/${patient.id}/edit`)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Edit patient</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteClick(patient.id, patient.firstName, patient.lastName)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete patient</span>
-                            </Button>
-                          </div>
-                        </TableCell>
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Student Number</TableHead>
+                        <TableHead>Gender</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedPatients.map((patient) => (
+                        <TableRow key={patient.id}>
+                          <TableCell>
+                            <Link href={`/patients/${patient.id}`} className="font-medium text-primary hover:underline">
+                              {patient.firstName} {patient.lastName}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{patient.studentNumber || "—"}</TableCell>
+                          <TableCell>{patient.gender}</TableCell>
+                          <TableCell>{patient.status}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => router.push(`/patients/${patient.id}/edit`)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Edit patient</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteClick(patient.id, patient.firstName, patient.lastName)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete patient</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages} • Showing {startIndex + 1}-
+                    {Math.min(endIndex, filteredPatients.length)} of {filteredPatients.length}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="gap-1"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
